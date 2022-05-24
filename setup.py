@@ -25,7 +25,6 @@ testing_require = [
     'mock',
     'pytest-xdist',
     'pytype',
-    'dm-sonnet',
 ]
 
 setuptools.setup(
@@ -52,6 +51,7 @@ setuptools.setup(
         'dm-haiku',
         'dm-launchpad==0.5.2',
         'dm-reverb==0.7.2',
+        'dm-sonnet',
         'enn @ git+https://git@github.com/deepmind/enn',
         'jax',
         'jaxlib',

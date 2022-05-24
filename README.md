@@ -78,6 +78,6 @@ If you use `enn_acme` in your work, please cite the [enn paper] and [acme report
 }
 ```
 
-[colab tutorial]: https://colab.research.google.com/github/deepmind/enn/blob/master/enn_acme/tutorial.ipynb
+[colab tutorial]: https://colab.research.google.com/github/deepmind/enn_acme/blob/master/enn_acme/tutorial.ipynb
 [enn paper]: https://arxiv.org/abs/2107.08924
 [acme report]: https://arxiv.org/abs/2006.00979
