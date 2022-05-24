@@ -54,12 +54,11 @@ More examples can be found in the [colab tutorial].
 If you use `enn_acme` in your work, please cite the [enn paper] and [acme report]:
 
 ```bibtex
-@inproceedings{,
-    title={Epistemic Neural Networks},
-    author={Ian Osband, Zheng Wen, Seyed Mohammad Asghari, Vikranth Dwaracherla, Morteza Ibrahimi, Xiyuan Lu, Benjamin Van Roy},
-    booktitle={arxiv},
-    year={2022},
-    url={https://arxiv.org/abs/2107.08924}
+@article{osband2021epistemic,
+  title={Epistemic neural networks},
+  author={Osband, Ian and Wen, Zheng and Asghari, Mohammad and Ibrahimi, Morteza and Lu, Xiuyuan and Van Roy, Benjamin},
+  journal={arXiv preprint arXiv:2107.08924},
+  year={2022}
 }
 ```
 
