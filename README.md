@@ -47,11 +47,11 @@ We have tested `enn_acme` on Python 3.7. To install the dependencies:
 
 More examples can be found in the [colab tutorial].
 
-4. **Optional**: run the tests by executing `./test.sh` from ENN_ACME root directory.
+4. **Optional**: run the tests by executing `./test.sh` from `enn_acme` root directory.
 
 ## Citing
 
-If you use `enn_acme` in your work, please cite the accompanying [paper]:
+If you use `enn_acme` in your work, please cite the [enn paper] and [acme report]:
 
 ```bibtex
 @inproceedings{,
@@ -63,5 +63,21 @@ If you use `enn_acme` in your work, please cite the accompanying [paper]:
 }
 ```
 
+```bibtex
+@article{hoffman2020acme,
+    title={Acme: A Research Framework for Distributed Reinforcement Learning},
+    author={Matt Hoffman and Bobak Shahriari and John Aslanides and Gabriel
+        Barth-Maron and Feryal Behbahani and Tamara Norman and Abbas Abdolmaleki
+        and Albin Cassirer and Fan Yang and Kate Baumli and Sarah Henderson and
+        Alex Novikov and Sergio Gómez Colmenarejo and Serkan Cabi and Caglar
+        Gulcehre and Tom Le Paine and Andrew Cowie and Ziyu Wang and Bilal Piot
+        and Nando de Freitas},
+    year={2020},
+    journal={arXiv preprint arXiv:2006.00979},
+    url={https://arxiv.org/abs/2006.00979},
+}
+```
+
 [colab tutorial]: https://colab.research.google.com/github/deepmind/enn/blob/master/enn_acme/tutorial.ipynb
-[paper]: https://arxiv.org/abs/2107.08924
+[enn paper]: https://arxiv.org/abs/2107.08924
+[acme report]: https://arxiv.org/abs/2006.00979
