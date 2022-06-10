@@ -25,7 +25,7 @@ from acme import specs
 from acme.jax import utils
 from acme.utils import counting
 from acme.utils import loggers
-from enn import base as enn_base
+from enn import base_legacy as enn_base
 from enn_acme import base as agent_base
 import haiku as hk
 import jax

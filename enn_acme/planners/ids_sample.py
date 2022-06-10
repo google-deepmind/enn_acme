@@ -19,7 +19,7 @@ from typing import Optional, Sequence
 from acme import specs
 from acme.jax import utils
 import chex
-from enn import base as enn_base
+from enn import base_legacy as enn_base
 from enn import utils as enn_utils
 from enn_acme import base as agent_base
 import haiku as hk

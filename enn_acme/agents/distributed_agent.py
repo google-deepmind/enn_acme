@@ -26,7 +26,7 @@ from acme.jax import variable_utils
 from acme.utils import counting
 from acme.utils import loggers
 import dm_env
-from enn import base as enn_base
+from enn import base_legacy as enn_base
 from enn_acme import base as agent_base
 from enn_acme.agents import acting
 from enn_acme.agents import agent

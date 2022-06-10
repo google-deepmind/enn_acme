@@ -17,7 +17,7 @@ import abc
 from typing import Tuple, Union
 
 from absl import logging
-from enn import base as enn_base
+from enn import base_legacy as enn_base
 from enn import utils
 from enn_acme import base as agent_base
 import haiku as hk

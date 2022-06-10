@@ -15,7 +15,7 @@
 """An EnnPlanner that selects actions based on Thompson sampling."""
 from acme.jax import utils
 import dm_env
-from enn import base as enn_base
+from enn import base_legacy as enn_base
 from enn import utils as enn_utils
 from enn_acme import base as agent_base
 import haiku as hk

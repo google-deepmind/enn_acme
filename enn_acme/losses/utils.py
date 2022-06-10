@@ -15,7 +15,7 @@
 """Helpful functions relating to losses."""
 from typing import Callable, Optional, Tuple
 
-from enn import base as enn_base
+from enn import base_legacy as enn_base
 from enn import losses as enn_losses
 from enn_acme import base as agent_base
 import haiku as hk

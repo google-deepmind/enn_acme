@@ -22,7 +22,7 @@ from acme import specs
 from acme import wrappers
 from acme.jax import utils
 from bsuite import bsuite
-from enn import base as enn_base
+from enn import base_legacy as enn_base
 from enn_acme import agents as enn_agents
 from enn_acme import losses
 from enn_acme import planners

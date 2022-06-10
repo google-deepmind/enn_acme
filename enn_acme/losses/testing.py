@@ -15,7 +15,7 @@
 """A LossFn computes the loss on a batch of data for one index."""
 from typing import Tuple
 
-from enn import base as enn_base
+from enn import base_legacy as enn_base
 from enn_acme import base as agent_base
 import haiku as hk
 import jax.numpy as jnp

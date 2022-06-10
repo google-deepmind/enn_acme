@@ -19,7 +19,7 @@ from typing import Any, Dict, NamedTuple, Optional, Tuple
 
 from acme import types
 import dm_env
-from enn import base as enn_base
+from enn import base_legacy as enn_base
 import haiku as hk
 import optax
 import reverb
