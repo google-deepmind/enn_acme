@@ -14,9 +14,6 @@
 # ============================================================================
 """Exposing the public methods of the losses."""
 
-# Q Learning
-from enn_acme.losses.q_learning import Categorical2HotQlearning
-from enn_acme.losses.q_learning import ClippedQlearning
 
 # Single Index
 from enn_acme.losses.single_index import average_single_index_loss
@@ -28,3 +25,7 @@ from enn_acme.losses.testing import dummy_loss
 
 # Additional useful functions
 from enn_acme.losses.utils import add_l2_weight_decay
+
+# Value Learning
+from enn_acme.losses.value_learning import Categorical2HotQlearning
+from enn_acme.losses.value_learning import ClippedQlearning
