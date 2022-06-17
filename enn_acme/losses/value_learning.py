@@ -20,7 +20,6 @@ from acme import types
 from enn import base_legacy as enn_base
 from enn import losses
 from enn import networks
-from enn import utils
 from enn_acme import base as agent_base
 from enn_acme.losses import single_index
 import haiku as hk
@@ -47,9 +46,9 @@ class ClippedQlearning(single_index.SingleIndexLossFn):
     """Evaluate loss for one batch, for one single index."""
     transitions: types.Transition = batch.data
     net_out_tm1 = apply(params, transitions.observation, index)
-    q_tm1 = utils.parse_net_output(net_out_tm1)
+    q_tm1 = networks.parse_net_output(net_out_tm1)
     net_out_t = apply(state.target_params, transitions.next_observation, index)
-    q_t = utils.parse_net_output(net_out_t)
+    q_t = networks.parse_net_output(net_out_t)
 
     d_t = (transitions.discount * self.discount).astype(jnp.float32)
     r_t = jnp.clip(transitions.reward, -self.max_abs_reward,

@@ -16,7 +16,7 @@
 from acme.jax import utils
 import dm_env
 from enn import base_legacy as enn_base
-from enn import utils as enn_utils
+from enn import networks
 from enn_acme import base as agent_base
 import haiku as hk
 import jax
@@ -44,7 +44,7 @@ class ThompsonQPlanner(agent_base.EnnPlanner):
                         key: enn_base.RngKey) -> agent_base.Action:
       observation = utils.add_batch_dim(observation)
       net_out = self.enn.apply(params, observation, index)
-      action_values = enn_utils.parse_net_output(net_out)
+      action_values = networks.parse_net_output(net_out)
       return rlax.epsilon_greedy(epsilon).sample(key, action_values)
     self._batched_egreedy = jax.jit(batched_egreedy)
 

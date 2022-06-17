@@ -20,6 +20,7 @@ from acme import specs
 from acme.jax import utils
 import chex
 from enn import base_legacy as enn_base
+from enn import networks
 from enn import utils as enn_utils
 from enn_acme import base as agent_base
 import haiku as hk
@@ -156,7 +157,7 @@ class RegretWithPessimism(RegretCalculator):
       """Estimates regret for each action."""
       batched_out = forward(params, observation, key)
       # TODO(author4): Sort out the need for squeeze/batch more clearly.
-      batched_q = jnp.squeeze(enn_utils.parse_net_output(batched_out))
+      batched_q = jnp.squeeze(networks.parse_net_output(batched_out))
       assert (batched_q.ndim == 2) and (batched_q.shape[0] == num_sample)
       sample_regret = jnp.max(batched_q, axis=1, keepdims=True) - batched_q
       return jnp.mean(sample_regret, axis=0) + pessimism
@@ -193,7 +194,7 @@ class VarianceGVF(InformationCalculator):
       assert isinstance(batched_out, enn_base.OutputWithPrior)
 
       # TODO(author4): Sort out the need for squeeze/batch more clearly.
-      batched_q = jnp.squeeze(enn_utils.parse_net_output(batched_out))
+      batched_q = jnp.squeeze(networks.parse_net_output(batched_out))
       assert (batched_q.ndim == 2) and (batched_q.shape[0] == self.num_sample)
       total_variance = jnp.var(batched_q, axis=0)
 
@@ -250,7 +251,7 @@ class VarianceOptimalAction(InformationCalculator):
     # TODO(author4): Sort out the need for squeeze/batch more clearly.
 
     batched_out = self._forward(params, observation, key)
-    batched_q = np.squeeze(enn_utils.parse_net_output(batched_out))
+    batched_q = np.squeeze(networks.parse_net_output(batched_out))
     assert (batched_q.ndim == 2) and (batched_q.shape[0] == self.num_sample)
 
     return compute_var_cond_mean(batched_q) + self.ridge_factor

@@ -26,7 +26,7 @@ from acme.agents import agent as agent_lib
 from acme.agents import replay
 from acme.jax import variable_utils
 from acme.utils import loggers
-from enn import base_legacy as enn_base
+from enn import networks
 from enn_acme import base as agent_base
 from enn_acme import losses
 from enn_acme.agents import acting
@@ -61,7 +61,7 @@ class EnnAgent(agent_lib.Agent):
   """A single-process Acme agent based around an ENN."""
 
   def __init__(self,
-               enn: enn_base.EpistemicNetwork,
+               enn: networks.EpistemicNetwork,
                loss_fn: Union[agent_base.LossFn, losses.SingleIndexLossFn],
                planner: agent_base.EnnPlanner,
                config: AgentConfig,
