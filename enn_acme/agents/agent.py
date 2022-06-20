@@ -61,7 +61,7 @@ class EnnAgent(agent_lib.Agent):
   """A single-process Acme agent based around an ENN."""
 
   def __init__(self,
-               enn: networks.EpistemicNetwork,
+               enn: networks.EnnNoState,
                loss_fn: Union[agent_base.LossFn, losses.SingleIndexLossFn],
                planner: agent_base.EnnPlanner,
                config: AgentConfig,
