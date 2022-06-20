@@ -19,7 +19,7 @@ from typing import Optional, Sequence
 from acme import specs
 from acme.jax import utils
 import chex
-from enn import base_legacy as enn_base
+from enn import base as enn_base
 from enn import networks
 from enn import utils as enn_utils
 from enn_acme import base as agent_base
@@ -35,8 +35,8 @@ class InformationCalculator(typing_extensions.Protocol):
 
   def __call__(self,
                params: hk.Params,
-               observation: enn_base.Array,
-               key: enn_base.RngKey) -> enn_base.Array:
+               observation: chex.Array,
+               key: chex.PRNGKey) -> chex.Array:
     """Estimates information gain for each action."""
 
 
@@ -44,17 +44,17 @@ class RegretCalculator(typing_extensions.Protocol):
 
   def __call__(self,
                params: hk.Params,
-               observation: enn_base.Array,
-               key: enn_base.RngKey) -> enn_base.Array:
+               observation: chex.Array,
+               key: chex.PRNGKey) -> chex.Array:
     """Estimates regret for each action."""
 
 
 class InformationRatioOptimizer(typing_extensions.Protocol):
 
   def __call__(self,
-               regret: enn_base.Array,
-               information: enn_base.Array,
-               key: enn_base.RngKey) -> enn_base.Array:
+               regret: chex.Array,
+               information: chex.Array,
+               key: chex.PRNGKey) -> chex.Array:
     """Returns the probability distribution that minimizes information ratio."""
 
 
@@ -62,7 +62,7 @@ class IdsPlanner(agent_base.EnnPlanner):
   """A planner that performs IDS based on enn outputs."""
 
   def __init__(self,
-               enn: enn_base.EpistemicNetwork,
+               enn: networks.EnnNoState,
                environment_spec: specs.EnvironmentSpec,
                information_calculator: InformationCalculator,
                regret_calculator: RegretCalculator,
@@ -77,7 +77,7 @@ class IdsPlanner(agent_base.EnnPlanner):
 
   def select_action(self,
                     params: hk.Params,
-                    observation: enn_base.Array) -> agent_base.Action:
+                    observation: chex.Array) -> agent_base.Action:
     """Selects an action given params and observation."""
     regret = self.regret_calculator(params, observation, next(self.rng))
     information = self.information_calculator(params, observation,
@@ -94,9 +94,9 @@ class DiscreteInformatioRatioOptimizer(InformationRatioOptimizer):
                probability_discretize: int = 101):
     super().__init__()
 
-    def optimize(regret: enn_base.Array,
-                 information: enn_base.Array,
-                 key: enn_base.RngKey) -> enn_base.Array:
+    def optimize(regret: chex.Array,
+                 information: chex.Array,
+                 key: chex.PRNGKey) -> chex.Array:
       """Returns probability distribution that minimizes information ratio."""
 
       num_action = len(regret)
@@ -134,9 +134,9 @@ class DiscreteInformatioRatioOptimizer(InformationRatioOptimizer):
     self._optimize = jax.jit(optimize)
 
   def __call__(self,
-               regret: enn_base.Array,
-               information: enn_base.Array,
-               key: enn_base.RngKey) -> enn_base.Array:
+               regret: chex.Array,
+               information: chex.Array,
+               key: chex.PRNGKey) -> chex.Array:
     return self._optimize(regret, information, key)
 
 
@@ -144,7 +144,7 @@ class RegretWithPessimism(RegretCalculator):
   """Sample based average regret with pessimism."""
 
   def __init__(self,
-               enn: enn_base.EpistemicNetwork,
+               enn: networks.EnnNoState,
                num_sample: int = 100,
                pessimism: float = 0.,):
     super().__init__()
@@ -152,8 +152,8 @@ class RegretWithPessimism(RegretCalculator):
 
     def sample_based_regret(
         params: hk.Params,
-        observation: enn_base.Array,
-        key: enn_base.RngKey) -> enn_base.Array:
+        observation: chex.Array,
+        key: chex.PRNGKey) -> chex.Array:
       """Estimates regret for each action."""
       batched_out = forward(params, observation, key)
       # TODO(author4): Sort out the need for squeeze/batch more clearly.
@@ -165,8 +165,8 @@ class RegretWithPessimism(RegretCalculator):
 
   def __call__(self,
                params: hk.Params,
-               observation: enn_base.Array,
-               key: enn_base.RngKey) -> enn_base.Array:
+               observation: chex.Array,
+               key: chex.PRNGKey) -> chex.Array:
     return self._sample_based_regret(params, observation, key)
 
 
@@ -174,7 +174,7 @@ class VarianceGVF(InformationCalculator):
   """Computes the variance of GVFs."""
 
   def __init__(self,
-               enn: enn_base.EpistemicNetwork,
+               enn: networks.EnnNoState,
                num_sample: int = 100,
                ridge_factor: float = 1e-6,
                exclude_keys: Optional[Sequence[str]] = None,
@@ -187,8 +187,8 @@ class VarianceGVF(InformationCalculator):
     self.exclude_keys = exclude_keys or []
 
     def compute_variance(params: hk.Params,
-                         observation: enn_base.Array,
-                         key: enn_base.RngKey) -> enn_base.Array:
+                         observation: chex.Array,
+                         key: chex.PRNGKey) -> chex.Array:
       batched_out = self._forward(params, observation, key)
       # TODO(author2): Forces network to fit the OutputWithPrior format.
       assert isinstance(batched_out, enn_base.OutputWithPrior)
@@ -222,8 +222,8 @@ class VarianceGVF(InformationCalculator):
 
   def __call__(self,
                params: hk.Params,
-               observation: enn_base.Array,
-               key: enn_base.RngKey) -> enn_base.Array:
+               observation: chex.Array,
+               key: chex.PRNGKey) -> chex.Array:
     """Estimates information gain for each action."""
     return self._compute_variance(params, observation, key)
 
@@ -232,7 +232,7 @@ class VarianceOptimalAction(InformationCalculator):
   """Computes the variance of conditional expectation of Q conditioned on A*."""
 
   def __init__(self,
-               enn: enn_base.EpistemicNetwork,
+               enn: networks.EnnNoState,
                num_sample: int = 100,
                ridge_factor: float = 1e-6,):
     super().__init__()
@@ -243,8 +243,8 @@ class VarianceOptimalAction(InformationCalculator):
 
   def __call__(self,
                params: hk.Params,
-               observation: enn_base.Array,
-               key: enn_base.RngKey) -> enn_base.Array:
+               observation: chex.Array,
+               key: chex.PRNGKey) -> chex.Array:
     """Estimates information gain for each action."""
     # TODO(author4): Note this cannot be jax.jit in current form.
     # TODO(author4): This implementation does not allow for GVF yet!
@@ -257,7 +257,7 @@ class VarianceOptimalAction(InformationCalculator):
     return compute_var_cond_mean(batched_q) + self.ridge_factor
 
 
-def compute_var_cond_mean(q_samples: enn_base.Array) -> enn_base.Array:
+def compute_var_cond_mean(q_samples: chex.Array) -> chex.Array:
   """Computes the variance of conditional means given a set of q samples."""
 
   num_action = q_samples.shape[1]
@@ -281,10 +281,10 @@ def compute_var_cond_mean(q_samples: enn_base.Array) -> enn_base.Array:
   return qdf_var_cond_mean.sort_index().to_numpy()
 
 
-def make_batched_forward(enn: enn_base.EpistemicNetwork, batch_size: int):
+def make_batched_forward(enn: networks.EnnNoState, batch_size: int):
   def forward(params: hk.Params,
-              observation: enn_base.Array,
-              key: enn_base.RngKey) -> enn_base.Output:
+              observation: chex.Array,
+              key: chex.PRNGKey) -> enn_base.Output:
     """Fast/efficient implementation of batched forward in Jax."""
     batched_indexer = enn_utils.make_batch_indexer(enn.indexer, batch_size)
     batched_forward = jax.vmap(enn.apply, in_axes=[None, None, 0])
@@ -294,7 +294,7 @@ def make_batched_forward(enn: enn_base.EpistemicNetwork, batch_size: int):
 
 
 def make_default_variance_ids_planner(
-    enn: enn_base.EpistemicNetwork,
+    enn: networks.EnnNoState,
     environment_spec: specs.EnvironmentSpec,
     seed: int = 0,
     jit: bool = False) -> IdsPlanner:

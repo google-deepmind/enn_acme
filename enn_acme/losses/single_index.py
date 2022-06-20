@@ -17,7 +17,9 @@ import abc
 from typing import Tuple, Union
 
 from absl import logging
-from enn import base_legacy as enn_base
+import chex
+from enn import base as enn_base
+from enn import networks
 from enn import utils
 from enn_acme import base as agent_base
 import haiku as hk
@@ -32,12 +34,12 @@ class SingleIndexLossFn(abc.ABC):
   @abc.abstractmethod
   def __call__(
       self,
-      apply: enn_base.ApplyFn,
+      apply: networks.ApplyNoState,
       params: hk.Params,
       state: agent_base.LearnerState,
       batch: reverb.ReplaySample,
       index: enn_base.Index,
-  ) -> Tuple[enn_base.Array, agent_base.LossMetrics]:
+  ) -> Tuple[chex.Array, agent_base.LossMetrics]:
     """Compute the loss on a single batch of data, for one index."""
 
 
@@ -45,11 +47,11 @@ def average_single_index_loss(single_loss: SingleIndexLossFn,
                               num_index_samples: int = 1) -> agent_base.LossFn:
   """Average a single index loss over multiple index samples."""
 
-  def loss_fn(enn: enn_base.EpistemicNetwork,
+  def loss_fn(enn: networks.EnnNoState,
               params: hk.Params,
               state: agent_base.LearnerState,
               batch: reverb.ReplaySample,
-              key: enn_base.RngKey) -> enn_base.Array:
+              key: chex.PRNGKey) -> chex.Array:
     batched_indexer = utils.make_batch_indexer(enn.indexer, num_index_samples)
     batched_loss = jax.vmap(single_loss, in_axes=[None, None, None, None, 0])
     loss, metrics = batched_loss(

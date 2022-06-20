@@ -16,7 +16,8 @@
 
 from acme import specs
 from acme.jax import utils
-from enn import base_legacy as enn_base
+import chex
+from enn import networks
 from enn_acme import base as agent_base
 import haiku as hk
 import jax
@@ -26,7 +27,7 @@ class RandomPlanner(agent_base.EnnPlanner):
   """A planner selects actions randomly."""
 
   def __init__(self,
-               enn: enn_base.EpistemicNetwork,
+               enn: networks.EnnNoState,
                environment_spec: specs.EnvironmentSpec,
                seed: int = 0):
     self.enn = enn
@@ -35,7 +36,7 @@ class RandomPlanner(agent_base.EnnPlanner):
 
   def select_action(self,
                     params: hk.Params,
-                    observation: enn_base.Array) -> agent_base.Action:
+                    observation: chex.Array) -> agent_base.Action:
     """Selects an action given params and observation."""
     action = jax.random.choice(next(self.rng), self.num_actions)
     return utils.to_numpy_squeeze(action)

@@ -14,8 +14,9 @@
 # ============================================================================
 """An EnnPlanner that selects actions based on Thompson sampling."""
 from acme.jax import utils
+import chex
 import dm_env
-from enn import base_legacy as enn_base
+from enn import base as enn_base
 from enn import networks
 from enn_acme import base as agent_base
 import haiku as hk
@@ -27,21 +28,21 @@ class ThompsonQPlanner(agent_base.EnnPlanner):
   """A planner that performs Thompson sampling planning based on Q values."""
 
   def __init__(self,
-               enn: enn_base.EpistemicNetwork,
+               enn: networks.EnnNoState,
                seed: int = 0,
                epsilon: float = 0.):
     self.enn = enn
     self.rng = hk.PRNGSequence(seed)
     self.index = enn.indexer(next(self.rng))
 
-    def sample_index(key: enn_base.RngKey) -> enn_base.Index:
+    def sample_index(key: chex.PRNGKey) -> enn_base.Index:
       return self.enn.indexer(key)
     self._sample_index = jax.jit(sample_index)
 
     def batched_egreedy(params: hk.Params,
-                        observation: enn_base.Array,
+                        observation: chex.Array,
                         index: enn_base.Index,
-                        key: enn_base.RngKey) -> agent_base.Action:
+                        key: chex.PRNGKey) -> agent_base.Action:
       observation = utils.add_batch_dim(observation)
       net_out = self.enn.apply(params, observation, index)
       action_values = networks.parse_net_output(net_out)
@@ -50,7 +51,7 @@ class ThompsonQPlanner(agent_base.EnnPlanner):
 
   def select_action(self,
                     params: hk.Params,
-                    observation: enn_base.Array) -> agent_base.Action:
+                    observation: chex.Array) -> agent_base.Action:
     """Selects an action given params and observation."""
     action = self._batched_egreedy(
         params, observation, self.index, next(self.rng))

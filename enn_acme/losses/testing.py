@@ -15,7 +15,8 @@
 """A LossFn computes the loss on a batch of data for one index."""
 from typing import Tuple
 
-from enn import base_legacy as enn_base
+import chex
+from enn import networks
 from enn_acme import base as agent_base
 import haiku as hk
 import jax.numpy as jnp
@@ -23,12 +24,12 @@ import reverb
 
 
 def dummy_loss(
-    enn: enn_base.EpistemicNetwork,
+    enn: networks.EnnNoState,
     params: hk.Params,
     state: agent_base.LearnerState,
     batch: reverb.ReplaySample,
-    key: enn_base.RngKey,
-) -> Tuple[enn_base.Array, agent_base.LossMetrics]:
+    key: chex.PRNGKey,
+) -> Tuple[chex.Array, agent_base.LossMetrics]:
   """A dummy loss function that always returns loss=1."""
   del enn, params, state, batch, key
   return (jnp.ones(1), {})

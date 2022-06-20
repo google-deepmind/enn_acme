@@ -22,7 +22,7 @@ from acme import specs
 from acme import wrappers
 from acme.jax import utils
 from bsuite import bsuite
-from enn import base_legacy as enn_base
+from enn import networks
 from enn_acme import agents as enn_agents
 from enn_acme import losses
 from enn_acme import planners
@@ -73,10 +73,10 @@ def _spec_to_prior(spec: specs.EnvironmentSpec) -> testbed_base.PriorKnowledge:
 
 
 def _wrap_with_flatten(
-    enn: enn_base.EpistemicNetwork) -> enn_base.EpistemicNetwork:
+    enn: networks.EnnNoState) -> networks.EnnNoState:
   """Wraps an ENN with a flattening layer."""
   flatten = lambda x: jnp.reshape(x, [x.shape[0], -1])
-  return enn_base.EpistemicNetwork(
+  return networks.EnnNoState(
       apply=lambda p, x, z: enn.apply(p, flatten(x), z),
       init=lambda k, x, z: enn.init(k, flatten(x), z),
       indexer=enn.indexer,
@@ -84,7 +84,7 @@ def _wrap_with_flatten(
 
 
 def make_enn(agent: str,
-             spec: specs.EnvironmentSpec) -> enn_base.EpistemicNetwork:
+             spec: specs.EnvironmentSpec) -> networks.EnnNoState:
   """Parse the ENN from the agent name and prior."""
   # Parse testbed "prior" information from environment
   prior = _spec_to_prior(spec)

@@ -25,7 +25,8 @@ from acme import specs
 from acme.jax import utils
 from acme.utils import counting
 from acme.utils import loggers
-from enn import base_legacy as enn_base
+import chex
+from enn import networks
 from enn_acme import base as agent_base
 import haiku as hk
 import jax
@@ -39,7 +40,7 @@ class SgdLearner(acme.Learner, acme.Saveable):
   def __init__(
       self,
       input_spec: specs.Array,
-      enn: enn_base.EpistemicNetwork,
+      enn: networks.EnnNoState,
       loss_fn: agent_base.LossFn,
       optimizer: optax.GradientTransformation,
       data_iterator: Iterator[reverb.ReplaySample],
@@ -58,7 +59,7 @@ class SgdLearner(acme.Learner, acme.Saveable):
     def sgd_step(
         state: agent_base.LearnerState,
         batch: reverb.ReplaySample,
-        key: enn_base.RngKey,
+        key: chex.PRNGKey,
     ) -> Tuple[agent_base.LearnerState, agent_base.LossMetrics]:
       # Implements one SGD step of the loss and updates the learner state
       (loss, metrics), grads = jax.value_and_grad(

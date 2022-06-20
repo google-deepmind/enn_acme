@@ -15,8 +15,9 @@
 """Helpful functions relating to losses."""
 from typing import Callable, Optional, Tuple
 
-from enn import base_legacy as enn_base
+import chex
 from enn import losses as enn_losses
+from enn import networks
 from enn_acme import base as agent_base
 import haiku as hk
 import reverb
@@ -29,12 +30,12 @@ def add_l2_weight_decay(
 ) -> agent_base.LossFn:
   """Adds l2 weight decay to a given loss function."""
   def new_loss(
-      enn: enn_base.EpistemicNetwork,
+      enn: networks.EnnNoState,
       params: hk.Params,
       state: agent_base.LearnerState,
       batch: reverb.ReplaySample,
-      key: enn_base.RngKey,
-  ) -> Tuple[enn_base.Array, agent_base.LossMetrics]:
+      key: chex.PRNGKey,
+  ) -> Tuple[chex.Array, agent_base.LossMetrics]:
     loss, metrics = loss_fn(enn, params, state, batch, key)
     l2_penalty = enn_losses.l2_weights_with_predicate(params, predicate)
     decay = l2_penalty * scale_fn(state.learner_steps)

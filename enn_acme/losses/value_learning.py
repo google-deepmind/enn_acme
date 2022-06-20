@@ -17,7 +17,8 @@ import dataclasses
 from typing import Tuple
 
 from acme import types
-from enn import base_legacy as enn_base
+import chex
+from enn import base as enn_base
 from enn import losses
 from enn import networks
 from enn_acme import base as agent_base
@@ -37,12 +38,12 @@ class ClippedQlearning(single_index.SingleIndexLossFn):
 
   def __call__(
       self,
-      apply: enn_base.ApplyFn,
+      apply: networks.ApplyNoState,
       params: hk.Params,
       state: agent_base.LearnerState,
       batch: reverb.ReplaySample,
       index: enn_base.Index,
-  ) -> Tuple[enn_base.Array, agent_base.LossMetrics]:
+  ) -> Tuple[chex.Array, agent_base.LossMetrics]:
     """Evaluate loss for one batch, for one single index."""
     transitions: types.Transition = batch.data
     net_out_tm1 = apply(params, transitions.observation, index)
@@ -66,12 +67,12 @@ class Categorical2HotQlearning(single_index.SingleIndexLossFn):
 
   def __call__(
       self,
-      apply: enn_base.ApplyFn,
+      apply: networks.ApplyNoState,
       params: hk.Params,
       state: agent_base.LearnerState,
       batch: reverb.ReplaySample,
       index: enn_base.Index,
-  ) -> Tuple[enn_base.Array, agent_base.LossMetrics]:
+  ) -> Tuple[chex.Array, agent_base.LossMetrics]:
     """Evaluate loss for one batch, for one single index."""
     transitions: types.Transition = batch.data
     batch_idx = jnp.arange(transitions.observation.shape[0])

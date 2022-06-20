@@ -18,15 +18,16 @@ import dataclasses
 from typing import Any, Dict, NamedTuple, Optional, Tuple
 
 from acme import types
+import chex
 import dm_env
-from enn import base_legacy as enn_base
+from enn import networks
 import haiku as hk
 import optax
 import reverb
 import typing_extensions
 
 Action = int
-LossMetrics = Dict[str, enn_base.Array]
+LossMetrics = Dict[str, chex.Array]
 
 
 @dataclasses.dataclass
@@ -42,12 +43,12 @@ class EnnPlanner(abc.ABC):
   and choice of replay "adder" from action selection. For example of how this is
   used to make an acme.Actor see PlannerActor in agents/acting.py.
   """
-  enn: enn_base.EpistemicNetwork
+  enn: networks.EnnNoState
   seed: Optional[int] = 0
 
   @abc.abstractmethod
   def select_action(
-      self, params: hk.Params, observation: enn_base.Array) -> Action:
+      self, params: hk.Params, observation: chex.Array) -> Action:
     """Selects an action given params and observation."""
 
   def observe_first(self, timestep: dm_env.TimeStep):
@@ -74,9 +75,9 @@ class LossFn(typing_extensions.Protocol):
   """
 
   def __call__(self,
-               enn: enn_base.EpistemicNetwork,
+               enn: networks.EnnNoState,
                params: hk.Params,
                state: LearnerState,
                batch: reverb.ReplaySample,
-               key: enn_base.RngKey) -> Tuple[enn_base.Array, LossMetrics]:
+               key: chex.PRNGKey) -> Tuple[chex.Array, LossMetrics]:
     """Compute the loss on a single batch of data, for one random key."""

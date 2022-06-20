@@ -26,7 +26,7 @@ from acme.jax import variable_utils
 from acme.utils import counting
 from acme.utils import loggers
 import dm_env
-from enn import base_legacy as enn_base
+from enn import networks
 from enn_acme import base as agent_base
 from enn_acme.agents import acting
 from enn_acme.agents import agent
@@ -40,10 +40,10 @@ class DistributedEnnAgent:
   """Distributed Enn agent."""
   # Constructors for key agent components.
   environment_factory: Callable[[bool], dm_env.Environment]
-  enn_factory: Callable[[specs.EnvironmentSpec], enn_base.EpistemicNetwork]
+  enn_factory: Callable[[specs.EnvironmentSpec], networks.EnnNoState]
   loss_fn: agent_base.LossFn
   planner_factory: Callable[
-      [enn_base.EpistemicNetwork, int], agent_base.EnnPlanner]
+      [networks.EnnNoState, int], agent_base.EnnPlanner]
 
   # Agent configuration.
   config: agent.AgentConfig
