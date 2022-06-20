@@ -46,7 +46,7 @@ class EnnTest(absltest.TestCase):
         num_ensemble=2,
         prior_scale=1.,
     )
-    enn = networks.wrap_enn_with_state_as_enn(enn)
+    enn = networks.wrap_enn_as_enn_no_state(enn)
     test_config = enn_agent.AgentConfig()
     test_config.min_observations = test_config.batch_size = 10
     single_loss = losses.ClippedQlearning(discount=0.99)
