@@ -19,7 +19,6 @@ from typing import Optional, Sequence
 from acme import specs
 from acme.jax import utils
 import chex
-from enn import base as enn_base
 from enn import networks
 from enn import utils as enn_utils
 from enn_acme import base as agent_base
@@ -191,7 +190,7 @@ class VarianceGVF(InformationCalculator):
                          key: chex.PRNGKey) -> chex.Array:
       batched_out = self._forward(params, observation, key)
       # TODO(author2): Forces network to fit the OutputWithPrior format.
-      assert isinstance(batched_out, enn_base.OutputWithPrior)
+      assert isinstance(batched_out, networks.OutputWithPrior)
 
       # TODO(author4): Sort out the need for squeeze/batch more clearly.
       batched_q = jnp.squeeze(networks.parse_net_output(batched_out))
@@ -284,7 +283,7 @@ def compute_var_cond_mean(q_samples: chex.Array) -> chex.Array:
 def make_batched_forward(enn: networks.EnnNoState, batch_size: int):
   def forward(params: hk.Params,
               observation: chex.Array,
-              key: chex.PRNGKey) -> enn_base.Output:
+              key: chex.PRNGKey) -> networks.Output:
     """Fast/efficient implementation of batched forward in Jax."""
     batched_indexer = enn_utils.make_batch_indexer(enn.indexer, batch_size)
     batched_forward = jax.vmap(enn.apply, in_axes=[None, None, 0])
