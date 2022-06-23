@@ -67,7 +67,8 @@ class DistributedEnnAgent:
       limiter = reverb.rate_limiters.SampleToInsertRatio(
           min_size_to_sample=self.config.min_replay_size,
           samples_per_insert=self.config.samples_per_insert,
-          error_buffer=self.config.batch_size)
+          error_buffer=self.config.batch_size,
+      )
     else:
       limiter = reverb.rate_limiters.MinSize(self.config.min_replay_size)
     replay_table = reverb.Table(
@@ -77,7 +78,8 @@ class DistributedEnnAgent:
         max_size=self.config.max_replay_size,
         rate_limiter=limiter,
         signature=adders.NStepTransitionAdder.signature(
-            environment_spec=self.environment_spec))
+            environment_spec=self.environment_spec),
+    )
     return [replay_table]
 
   def counter(self):
