@@ -68,3 +68,4 @@ def parse_loss_fn(
         'WARNING: coercing single_index_loss to LossFn with 1 random sample.')
     loss_fn = average_single_index_loss(loss_fn, num_index_samples=1)
   return loss_fn
+

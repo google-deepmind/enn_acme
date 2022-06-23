@@ -13,7 +13,8 @@
 # limitations under the License.
 # ============================================================================
 """Helpful functions relating to losses."""
-from typing import Callable, Optional, Tuple
+import dataclasses
+from typing import Callable, Optional, Tuple, Sequence
 
 import chex
 from enn import losses as enn_losses
@@ -44,3 +45,32 @@ def add_l2_weight_decay(
     metrics['raw_loss'] = loss
     return total_loss, metrics
   return new_loss
+
+
+@dataclasses.dataclass
+class CombineLossConfig:
+  loss_fn: agent_base.LossFn
+  name: str = 'unnamed'  # Name for the loss function
+  weight: float = 1.  # Weight to scale the loss by
+
+
+def combine_losses(losses: Sequence[CombineLossConfig]) -> agent_base.LossFn:
+  """Combines multiple losses into a single loss."""
+
+  def loss_fn(enn: networks.EnnNoState,
+              params: hk.Params,
+              state: agent_base.LearnerState,
+              batch: reverb.ReplaySample,
+              key: chex.PRNGKey) -> Tuple[chex.Array, agent_base.LossMetrics]:
+    combined_loss = 0.
+    combined_metrics = {}
+    for loss_config in losses:
+      loss, metrics = loss_config.loss_fn(enn, params, state, batch, key)
+      combined_metrics[f'{loss_config.name}:loss'] = loss
+      for name, value in metrics.items():
+        combined_metrics[f'{loss_config.name}:{name}'] = value
+      combined_loss += loss_config.weight * loss
+    return combined_loss, combined_metrics
+
+  return loss_fn
+
