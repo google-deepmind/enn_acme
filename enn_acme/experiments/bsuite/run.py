@@ -121,6 +121,7 @@ def make_enn(agent: str,
     testbed_agent = typing.cast(testbed_agents.VanillaEnnAgent, testbed_agent)
     enn = testbed_agent.config.enn_ctor(prior)
 
+  enn = networks.wrap_enn_as_enn_no_state(enn)
   return _wrap_with_flatten(enn)
 
 
