@@ -18,7 +18,7 @@ Combines an actor, learner and replay server with some logic to handle the
 ratio between learning and acting.
 """
 import dataclasses
-from typing import Optional, Union
+from typing import Optional
 
 from acme import specs
 from acme.adders import reverb as adders
@@ -28,7 +28,6 @@ from acme.jax import variable_utils
 from acme.utils import loggers
 from enn import networks
 from enn_acme import base as agent_base
-from enn_acme import losses
 from enn_acme.agents import acting
 from enn_acme.agents import learning
 import optax
@@ -62,7 +61,7 @@ class EnnAgent(agent_lib.Agent):
 
   def __init__(self,
                enn: networks.EnnNoState,
-               loss_fn: Union[agent_base.LossFn, losses.SingleIndexLossFn],
+               loss_fn: agent_base.LossFn,
                planner: agent_base.EnnPlanner,
                config: AgentConfig,
                environment_spec: specs.EnvironmentSpec,
@@ -85,7 +84,7 @@ class EnnAgent(agent_lib.Agent):
     learner = learning.SgdLearner(
         input_spec=input_spec,
         enn=enn,
-        loss_fn=losses.parse_loss_fn(loss_fn),
+        loss_fn=loss_fn,
         optimizer=config.optimizer,
         data_iterator=reverb_replay.data_iterator,
         target_update_period=config.target_update_period,
