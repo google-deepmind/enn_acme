@@ -13,28 +13,30 @@
 # limitations under the License.
 # ============================================================================
 """A LossFn computes the loss on a batch of data for one index."""
-import abc
-from typing import Tuple, Union
+from typing import Tuple
 
-from absl import logging
 import chex
 from enn import base as enn_base
-from enn import networks
+from enn import networks as enn_networks
 from enn import utils
 from enn_acme import base as agent_base
 import haiku as hk
 import jax
 import jax.numpy as jnp
 import reverb
+import typing_extensions as te
 
 
-class SingleIndexLossFn(abc.ABC):
-  """A SingleIndexLossFn defines how to process one batch of data, one index."""
+# Simple alises for generic modules
+_ENN = enn_base.EpistemicNetwork[agent_base.Input, agent_base.Output]
 
-  @abc.abstractmethod
+
+class SingleLossFn(te.Protocol[agent_base.Input, agent_base.Output]):
+  """A SingleLossFn defines how to process one batch of data, one index."""
+
   def __call__(
       self,
-      apply: networks.ApplyNoState,
+      apply: enn_base.ApplyFn[agent_base.Input, agent_base.Output],
       params: hk.Params,
       state: agent_base.LearnerState,
       batch: reverb.ReplaySample,
@@ -43,15 +45,15 @@ class SingleIndexLossFn(abc.ABC):
     """Compute the loss on a single batch of data, for one index."""
 
 
-def average_single_index_loss(single_loss: SingleIndexLossFn,
-                              num_index_samples: int = 1) -> agent_base.LossFn:
+def average_single_index_loss(
+    single_loss: SingleLossFn[agent_base.Input, agent_base.Output],
+    num_index_samples: int = 1
+) -> agent_base.LossFn[agent_base.Input, agent_base.Output]:
   """Average a single index loss over multiple index samples."""
 
-  def loss_fn(enn: networks.EnnNoState,
-              params: hk.Params,
-              state: agent_base.LearnerState,
-              batch: reverb.ReplaySample,
-              key: chex.PRNGKey) -> chex.Array:
+  def loss_fn(enn: _ENN[agent_base.Input, agent_base.Output],
+              params: hk.Params, state: agent_base.LearnerState,
+              batch: reverb.ReplaySample, key: chex.PRNGKey) -> chex.Array:
     batched_indexer = utils.make_batch_indexer(enn.indexer, num_index_samples)
     batched_loss = jax.vmap(single_loss, in_axes=[None, None, None, None, 0])
     loss, metrics = batched_loss(
@@ -61,11 +63,6 @@ def average_single_index_loss(single_loss: SingleIndexLossFn,
   return loss_fn
 
 
-def parse_loss_fn(
-    loss_fn: Union[agent_base.LossFn, SingleIndexLossFn]) -> agent_base.LossFn:
-  if isinstance(loss_fn, SingleIndexLossFn):
-    logging.warn(
-        'WARNING: coercing single_index_loss to LossFn with 1 random sample.')
-    loss_fn = average_single_index_loss(loss_fn, num_index_samples=1)
-  return loss_fn
-
+# Loss modules specialized to work only with Array inputs.
+LossFnArray = agent_base.LossFn[chex.Array, enn_networks.Output]
+SingleLossFnArray = SingleLossFn[chex.Array, enn_networks.Output]

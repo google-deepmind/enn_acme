@@ -18,7 +18,7 @@ Combines an actor, learner and replay server with some logic to handle the
 ratio between learning and acting.
 """
 import dataclasses
-from typing import Optional
+import typing as tp
 
 from acme import specs
 from acme.adders import reverb as adders
@@ -26,11 +26,17 @@ from acme.agents import agent as agent_lib
 from acme.agents import replay
 from acme.jax import variable_utils
 from acme.utils import loggers
-from enn import networks
+from enn import base as enn_base
 from enn_acme import base as agent_base
 from enn_acme.agents import acting
 from enn_acme.agents import learning
 import optax
+
+
+# Simple alises for generic modules
+_ENN = enn_base.EpistemicNetwork[agent_base.Input, agent_base.Output]
+_LossFn = agent_base.LossFn[agent_base.Input, agent_base.Output]
+_Planner = agent_base.EnnPlanner[agent_base.Input, agent_base.Output]
 
 
 @dataclasses.dataclass
@@ -45,7 +51,7 @@ class AgentConfig:
   # Learner options
   optimizer: optax.GradientTransformation = optax.adam(1e-3)
   target_update_period: int = 4
-  learner_logger: Optional[loggers.Logger] = None
+  learner_logger: tp.Optional[loggers.Logger] = None
 
   # Replay options
   batch_size: int = 128
@@ -56,16 +62,17 @@ class AgentConfig:
   replay_table_name: str = adders.DEFAULT_PRIORITY_TABLE
 
 
-class EnnAgent(agent_lib.Agent):
+class EnnAgent(agent_lib.Agent, tp.Generic[agent_base.Input,
+                                           agent_base.Output]):
   """A single-process Acme agent based around an ENN."""
 
   def __init__(self,
-               enn: networks.EnnNoState,
-               loss_fn: agent_base.LossFn,
-               planner: agent_base.EnnPlanner,
+               enn: _ENN[agent_base.Input, agent_base.Output],
+               loss_fn: _LossFn[agent_base.Input, agent_base.Output],
+               planner: _Planner[agent_base.Input, agent_base.Output],
                config: AgentConfig,
                environment_spec: specs.EnvironmentSpec,
-               input_spec: Optional[specs.Array] = None):
+               input_spec: tp.Optional[specs.Array] = None):
     # Data is handled via the reverb replay.
     reverb_replay = replay.make_reverb_prioritized_nstep_replay(
         environment_spec=environment_spec,
@@ -81,7 +88,7 @@ class EnnAgent(agent_lib.Agent):
 
     # Learner updates ENN knowledge representation.
     input_spec = input_spec or environment_spec.observations
-    learner = learning.SgdLearner(
+    learner = learning.SgdLearner[agent_base.Input, agent_base.Output](
         input_spec=input_spec,
         enn=enn,
         loss_fn=loss_fn,
@@ -93,7 +100,7 @@ class EnnAgent(agent_lib.Agent):
     )
 
     # Select actions according to the actor
-    actor = acting.PlannerActor(
+    actor = acting.PlannerActor[agent_base.Input, agent_base.Output](
         planner=planner,
         variable_client=variable_utils.VariableClient(learner, ''),
         adder=reverb_replay.adder,

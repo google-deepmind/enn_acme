@@ -17,8 +17,9 @@
 
 # Single Index
 from enn_acme.losses.single_index import average_single_index_loss
-from enn_acme.losses.single_index import parse_loss_fn
-from enn_acme.losses.single_index import SingleIndexLossFn
+from enn_acme.losses.single_index import LossFnArray
+from enn_acme.losses.single_index import SingleLossFn
+from enn_acme.losses.single_index import SingleLossFnArray
 
 # Testing
 from enn_acme.losses.testing import dummy_loss

@@ -73,18 +73,18 @@ def _spec_to_prior(spec: specs.EnvironmentSpec) -> testbed_base.PriorKnowledge:
 
 
 def _wrap_with_flatten(
-    enn: networks.EnnNoState) -> networks.EnnNoState:
+    enn: networks.EnnArray) -> networks.EnnArray:
   """Wraps an ENN with a flattening layer."""
   flatten = lambda x: jnp.reshape(x, [x.shape[0], -1])
-  return networks.EnnNoState(
-      apply=lambda p, x, z: enn.apply(p, flatten(x), z),
+  return networks.EnnArray(
+      apply=lambda p, s, x, z: enn.apply(p, s, flatten(x), z),
       init=lambda k, x, z: enn.init(k, flatten(x), z),
       indexer=enn.indexer,
   )
 
 
 def make_enn(agent: str,
-             spec: specs.EnvironmentSpec) -> networks.EnnNoState:
+             spec: specs.EnvironmentSpec) -> networks.EnnArray:
   """Parse the ENN from the agent name and prior."""
   # Parse testbed "prior" information from environment
   prior = _spec_to_prior(spec)
@@ -121,7 +121,6 @@ def make_enn(agent: str,
     testbed_agent = typing.cast(testbed_agents.VanillaEnnAgent, testbed_agent)
     enn = testbed_agent.config.enn_ctor(prior)
 
-  enn = networks.wrap_enn_as_enn_no_state(enn)
   return _wrap_with_flatten(enn)
 
 

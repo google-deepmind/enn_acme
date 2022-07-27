@@ -23,11 +23,11 @@ import haiku as hk
 import jax
 
 
-class RandomPlanner(agent_base.EnnPlanner):
+class RandomPlanner(agent_base.EnnPlanner[chex.Array, networks.Output]):
   """A planner selects actions randomly."""
 
   def __init__(self,
-               enn: networks.EnnNoState,
+               enn: networks.EnnArray,
                environment_spec: specs.EnvironmentSpec,
                seed: int = 0):
     self.enn = enn

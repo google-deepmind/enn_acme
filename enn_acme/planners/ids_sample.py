@@ -57,11 +57,11 @@ class InformationRatioOptimizer(typing_extensions.Protocol):
     """Returns the probability distribution that minimizes information ratio."""
 
 
-class IdsPlanner(agent_base.EnnPlanner):
+class IdsPlanner(agent_base.EnnPlanner[chex.Array, networks.Output]):
   """A planner that performs IDS based on enn outputs."""
 
   def __init__(self,
-               enn: networks.EnnNoState,
+               enn: networks.EnnArray,
                environment_spec: specs.EnvironmentSpec,
                information_calculator: InformationCalculator,
                regret_calculator: RegretCalculator,
@@ -143,7 +143,7 @@ class RegretWithPessimism(RegretCalculator):
   """Sample based average regret with pessimism."""
 
   def __init__(self,
-               enn: networks.EnnNoState,
+               enn: networks.EnnArray,
                num_sample: int = 100,
                pessimism: float = 0.,):
     super().__init__()
@@ -173,7 +173,7 @@ class VarianceGVF(InformationCalculator):
   """Computes the variance of GVFs."""
 
   def __init__(self,
-               enn: networks.EnnNoState,
+               enn: networks.EnnArray,
                num_sample: int = 100,
                ridge_factor: float = 1e-6,
                exclude_keys: Optional[Sequence[str]] = None,
@@ -231,7 +231,7 @@ class VarianceOptimalAction(InformationCalculator):
   """Computes the variance of conditional expectation of Q conditioned on A*."""
 
   def __init__(self,
-               enn: networks.EnnNoState,
+               enn: networks.EnnArray,
                num_sample: int = 100,
                ridge_factor: float = 1e-6,):
     super().__init__()
@@ -280,7 +280,8 @@ def compute_var_cond_mean(q_samples: chex.Array) -> chex.Array:
   return qdf_var_cond_mean.sort_index().to_numpy()
 
 
-def make_batched_forward(enn: networks.EnnNoState, batch_size: int):
+def make_batched_forward(enn: networks.EnnArray, batch_size: int):
+  """Returns a fast/efficient implementation of batched forward in Jax."""
   def forward(params: hk.Params,
               observation: chex.Array,
               key: chex.PRNGKey) -> networks.Output:
@@ -288,12 +289,13 @@ def make_batched_forward(enn: networks.EnnNoState, batch_size: int):
     batched_indexer = enn_utils.make_batch_indexer(enn.indexer, batch_size)
     batched_forward = jax.vmap(enn.apply, in_axes=[None, None, 0])
     observation = utils.add_batch_dim(observation)
-    return batched_forward(params, observation, batched_indexer(key))
+    net_out, _ = batched_forward(params, {}, observation, batched_indexer(key))
+    return net_out
   return forward
 
 
 def make_default_variance_ids_planner(
-    enn: networks.EnnNoState,
+    enn: networks.EnnArray,
     environment_spec: specs.EnvironmentSpec,
     seed: int = 0,
     jit: bool = False) -> IdsPlanner:

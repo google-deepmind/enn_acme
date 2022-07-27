@@ -14,29 +14,34 @@
 # ============================================================================
 """Helpful functions relating to losses."""
 import dataclasses
-from typing import Callable, Optional, Tuple, Sequence
+import typing as tp
 
 import chex
+from enn import base as enn_base
 from enn import losses as enn_losses
-from enn import networks
 from enn_acme import base as agent_base
 import haiku as hk
 import reverb
 
 
+# Specific types
+_LossFn = agent_base.LossFn[agent_base.Input, agent_base.Output]
+_Enn = enn_base.EpistemicNetwork[agent_base.Input, agent_base.Output]
+
+
 def add_l2_weight_decay(
-    loss_fn: agent_base.LossFn,
-    scale_fn: Callable[[int], float],  # Maps learner_steps --> l2 decay
-    predicate: Optional[enn_losses.PredicateFn] = None,
-) -> agent_base.LossFn:
+    loss_fn: _LossFn,
+    scale_fn: tp.Callable[[int], float],  # Maps learner_steps --> l2 decay
+    predicate: tp.Optional[enn_losses.PredicateFn] = None,
+) -> _LossFn:
   """Adds l2 weight decay to a given loss function."""
   def new_loss(
-      enn: networks.EnnNoState,
+      enn: _Enn,
       params: hk.Params,
       state: agent_base.LearnerState,
       batch: reverb.ReplaySample,
       key: chex.PRNGKey,
-  ) -> Tuple[chex.Array, agent_base.LossMetrics]:
+  ) -> tp.Tuple[chex.Array, agent_base.LossMetrics]:
     loss, metrics = loss_fn(enn, params, state, batch, key)
     l2_penalty = enn_losses.l2_weights_with_predicate(params, predicate)
     decay = l2_penalty * scale_fn(state.learner_steps)
@@ -48,20 +53,22 @@ def add_l2_weight_decay(
 
 
 @dataclasses.dataclass
-class CombineLossConfig:
-  loss_fn: agent_base.LossFn
+class CombineLossConfig(tp.Generic[agent_base.Input, agent_base.Output]):
+  loss_fn: _LossFn
   name: str = 'unnamed'  # Name for the loss function
   weight: float = 1.  # Weight to scale the loss by
 
 
-def combine_losses(losses: Sequence[CombineLossConfig]) -> agent_base.LossFn:
+def combine_losses(losses: tp.Sequence[CombineLossConfig]) -> _LossFn:
   """Combines multiple losses into a single loss."""
 
-  def loss_fn(enn: networks.EnnNoState,
-              params: hk.Params,
-              state: agent_base.LearnerState,
-              batch: reverb.ReplaySample,
-              key: chex.PRNGKey) -> Tuple[chex.Array, agent_base.LossMetrics]:
+  def loss_fn(
+      enn: _Enn,
+      params: hk.Params,
+      state: agent_base.LearnerState,
+      batch: reverb.ReplaySample,
+      key: chex.PRNGKey,
+  ) -> tp.Tuple[chex.Array, agent_base.LossMetrics]:
     combined_loss = 0.
     combined_metrics = {}
     for loss_config in losses:

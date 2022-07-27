@@ -24,11 +24,11 @@ import jax
 import rlax
 
 
-class ThompsonQPlanner(agent_base.EnnPlanner):
+class ThompsonQPlanner(agent_base.EnnPlanner[chex.Array, networks.Output]):
   """A planner that performs Thompson sampling planning based on Q values."""
 
   def __init__(self,
-               enn: networks.EnnNoState,
+               enn: networks.EnnArray,
                seed: int = 0,
                epsilon: float = 0.):
     self.enn = enn
@@ -44,7 +44,9 @@ class ThompsonQPlanner(agent_base.EnnPlanner):
                         index: enn_base.Index,
                         key: chex.PRNGKey) -> agent_base.Action:
       observation = utils.add_batch_dim(observation)
-      net_out = self.enn.apply(params, observation, index)
+      dummy_network_state = {}
+      net_out, unused_network_state = self.enn.apply(
+          params, dummy_network_state, observation, index)
       action_values = networks.parse_net_output(net_out)
       return rlax.epsilon_greedy(epsilon).sample(key, action_values)
     self._batched_egreedy = jax.jit(batched_egreedy)

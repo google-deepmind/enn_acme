@@ -18,7 +18,7 @@ The Actor is a concept from the Acme library and is mostly a thin wrapper around
 the planner + infrastructure to interface with the learner and replay.
 """
 import dataclasses
-from typing import Optional
+import typing as tp
 
 import acme
 from acme import adders
@@ -30,18 +30,19 @@ from enn_acme import base as agent_base
 
 
 @dataclasses.dataclass
-class PlannerActor(acme.Actor):
+class PlannerActor(acme.Actor, tp.Generic[agent_base.Input, agent_base.Output]):
   """An actor based on acme library wrapped around an EnnPlanner.
 
   The Actor is essentially a thin wrapper around the planner + infrastructure to
   interface with the learner and replay. For many research questions you will
   not need to edit this class.
   """
-  planner: agent_base.EnnPlanner  # How to select actions from knowledge
+  # How to select actions from knowledge
+  planner: agent_base.EnnPlanner[agent_base.Input, agent_base.Output]
   variable_client: variable_utils.VariableClient  # Communicate variables/params
-  adder: Optional[adders.Adder] = None  # Interface with replay
+  adder: tp.Optional[adders.Adder] = None  # Interface with replay
 
-  def select_action(self, observation: types.NestedArray) -> agent_base.Action:
+  def select_action(self, observation: agent_base.Input) -> agent_base.Action:
     return self.planner.select_action(
         params=self.variable_client.params,
         observation=observation,

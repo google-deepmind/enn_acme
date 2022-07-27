@@ -18,7 +18,7 @@ The learner takes batches of data and learns on them via `step()`. The core
 logic is implemented via the loss: agent_base.LossFn.
 """
 import functools
-from typing import Iterator, List, Optional, Tuple
+from typing import Iterator, List, Optional, Tuple, Generic
 
 import acme
 from acme import specs
@@ -26,7 +26,7 @@ from acme.jax import utils
 from acme.utils import counting
 from acme.utils import loggers
 import chex
-from enn import networks
+from enn import base as enn_base
 from enn_acme import base as agent_base
 import haiku as hk
 import jax
@@ -34,14 +34,15 @@ import optax
 import reverb
 
 
-class SgdLearner(acme.Learner, acme.Saveable):
+class SgdLearner(acme.Learner, acme.Saveable,
+                 Generic[agent_base.Input, agent_base.Output]):
   """A Learner for acme library based around SGD on batches."""
 
   def __init__(
       self,
       input_spec: specs.Array,
-      enn: networks.EnnNoState,
-      loss_fn: agent_base.LossFn,
+      enn: enn_base.EpistemicNetwork[enn_base.Input, enn_base.Output],
+      loss_fn: agent_base.LossFn[enn_base.Input, enn_base.Output],
       optimizer: optax.GradientTransformation,
       data_iterator: Iterator[reverb.ReplaySample],
       target_update_period: int,
@@ -91,7 +92,8 @@ class SgdLearner(acme.Learner, acme.Saveable):
     dummy_index = self.enn.indexer(next(self._rng))
     dummy_input = utils.add_batch_dim(
         jax.tree_map(lambda x: x.generate_value(), input_spec))
-    initial_params = self.enn.init(next(self._rng), dummy_input, dummy_index)
+    initial_params, unused_state = self.enn.init(
+        next(self._rng), dummy_input, dummy_index)
     self._state = agent_base.LearnerState(
         params=initial_params,
         target_params=initial_params,

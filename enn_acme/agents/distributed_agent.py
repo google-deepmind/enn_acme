@@ -15,7 +15,7 @@
 """Distributed ENN Agent."""
 
 import dataclasses
-from typing import Callable, Optional
+import typing as tp
 
 import acme
 from acme import datasets
@@ -26,29 +26,51 @@ from acme.jax import variable_utils
 from acme.utils import counting
 from acme.utils import loggers
 import dm_env
-from enn import networks
+from enn import base as enn_base
 from enn_acme import base as agent_base
 from enn_acme.agents import acting
 from enn_acme.agents import agent
 from enn_acme.agents import learning
 import launchpad as lp
 import reverb
+import typing_extensions as te
+
+
+# Helpful Types
+class _EnnFactory(te.Protocol[agent_base.Input, agent_base.Output]):
+  """Defines an Enn based on environment specs."""
+
+  def __call__(
+      self,
+      env_specs: specs.EnvironmentSpec
+  ) -> enn_base.EpistemicNetwork[agent_base.Input, agent_base.Output]:
+    """Defines an Enn based on environment specs."""
+
+
+class _PlannerFactory(te.Protocol[agent_base.Input, agent_base.Output]):
+  """Defines an Enn Planner from an Enn and a seed."""
+
+  def __call__(
+      self,
+      enn: enn_base.EpistemicNetwork[agent_base.Input, agent_base.Output],
+      seed: int,
+  ) -> agent_base.EnnPlanner[agent_base.Input, agent_base.Output]:
+    """Defines an Enn Planner from an Enn and a seed."""
 
 
 @dataclasses.dataclass
-class DistributedEnnAgent:
+class DistributedEnnAgent(tp.Generic[agent_base.Input, agent_base.Output]):
   """Distributed Enn agent."""
   # Constructors for key agent components.
-  environment_factory: Callable[[bool], dm_env.Environment]
-  enn_factory: Callable[[specs.EnvironmentSpec], networks.EnnNoState]
-  loss_fn: agent_base.LossFn
-  planner_factory: Callable[
-      [networks.EnnNoState, int], agent_base.EnnPlanner]
+  environment_factory: tp.Callable[[bool], dm_env.Environment]
+  enn_factory: _EnnFactory[agent_base.Input, agent_base.Output]
+  loss_fn: agent_base.LossFn[agent_base.Input, agent_base.Output]
+  planner_factory: _PlannerFactory[agent_base.Input, agent_base.Output]
 
   # Agent configuration.
   config: agent.AgentConfig
   environment_spec: specs.EnvironmentSpec
-  input_spec: Optional[specs.Array] = None
+  input_spec: tp.Optional[specs.Array] = None
 
   # Distributed configuration.
   num_actors: int = 1
@@ -59,7 +81,7 @@ class DistributedEnnAgent:
   name: str = 'distributed_agent'
 
   # Placeholder for launchpad program.
-  _program: Optional[lp.Program] = None
+  _program: tp.Optional[lp.Program] = None
 
   def replay(self):
     """The replay storage."""
@@ -103,7 +125,7 @@ class DistributedEnnAgent:
 
     # Return the learning agent.
     input_spec = self.input_spec or self.environment_spec.observations
-    learner = learning.SgdLearner(
+    learner = learning.SgdLearner[agent_base.Input, agent_base.Output](
         input_spec=input_spec,
         enn=self.enn_factory(self.environment_spec),
         loss_fn=self.loss_fn,
@@ -141,7 +163,8 @@ class DistributedEnnAgent:
     )
     variable_client = variable_utils.VariableClient(
         variable_source, '', update_period=self.variable_update_period)
-    actor = acting.PlannerActor(planner, variable_client, adder)
+    actor = acting.PlannerActor[agent_base.Input, agent_base.Output](
+        planner, variable_client, adder)
 
     # Create the loop to connect environment and agent.
     counter = counting.Counter(counter, 'actor')

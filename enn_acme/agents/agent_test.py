@@ -19,6 +19,7 @@ import acme
 from acme import specs
 from acme.jax import utils
 from acme.testing import fakes
+import chex
 from enn import networks
 from enn_acme import losses
 from enn_acme import planners
@@ -46,11 +47,10 @@ class EnnTest(absltest.TestCase):
         num_ensemble=2,
         prior_scale=1.,
     )
-    enn = networks.wrap_enn_as_enn_no_state(enn)
     test_config = enn_agent.AgentConfig()
     test_config.min_observations = test_config.batch_size = 10
     single_loss = losses.ClippedQlearning(discount=0.99)
-    agent = enn_agent.EnnAgent(
+    agent = enn_agent.EnnAgent[chex.Array, networks.Output](
         environment_spec=spec,
         enn=enn,
         loss_fn=losses.average_single_index_loss(single_loss, 1),

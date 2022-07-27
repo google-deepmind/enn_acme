@@ -15,23 +15,25 @@
 """Base classes for ENN agent design."""
 import abc
 import dataclasses
-from typing import Any, Dict, NamedTuple, Optional, Tuple
+import typing as tp
 
 from acme import types
 import chex
 import dm_env
-from enn import networks
+from enn import base as enn_base
 import haiku as hk
 import optax
 import reverb
-import typing_extensions
+import typing_extensions as te
 
 Action = int
-LossMetrics = Dict[str, chex.Array]
+Input = tp.TypeVar('Input')  # Inputs to neural network
+Output = tp.TypeVar('Output')  # Outputs of neural network
+LossMetrics = enn_base.LossMetrics
 
 
 @dataclasses.dataclass
-class EnnPlanner(abc.ABC):
+class EnnPlanner(abc.ABC, tp.Generic[Input, Output]):
   """A planner can select actions based on an ENN knowledge representation.
 
   The EnnPlanner is one of the core units we often change in algorithm design.
@@ -43,12 +45,12 @@ class EnnPlanner(abc.ABC):
   and choice of replay "adder" from action selection. For example of how this is
   used to make an acme.Actor see PlannerActor in agents/acting.py.
   """
-  enn: networks.EnnNoState
-  seed: Optional[int] = 0
+  enn: enn_base.EpistemicNetwork[Input, Output]
+  seed: tp.Optional[int] = 0
 
   @abc.abstractmethod
   def select_action(
-      self, params: hk.Params, observation: chex.Array) -> Action:
+      self, params: hk.Params, observation: Input) -> Action:
     """Selects an action given params and observation."""
 
   def observe_first(self, timestep: dm_env.TimeStep):
@@ -58,26 +60,26 @@ class EnnPlanner(abc.ABC):
     """Optional: make an observation of timestep data from the environment."""
 
 
-class LearnerState(NamedTuple):
+class LearnerState(tp.NamedTuple):
   """Complete state of learner used for checkpointing / modifying loss."""
   params: hk.Params
   target_params: hk.Params
   opt_state: optax.OptState
   learner_steps: int
-  extra: Optional[Dict[str, Any]] = None
+  extra: tp.Optional[tp.Dict[str, tp.Any]] = None
 
 
-class LossFn(typing_extensions.Protocol):
+class LossFn(te.Protocol[Input, Output]):
   """A LossFn defines how to process one batch of data, for one random key.
 
-  typing_extensions.Protocol means that any functions with this signature
-  are also valid LossFn.
+  te.Protocol means that any functions with this signature are also valid
+  LossFn.
   """
 
   def __call__(self,
-               enn: networks.EnnNoState,
+               enn: enn_base.EpistemicNetwork[Input, Output],
                params: hk.Params,
                state: LearnerState,
                batch: reverb.ReplaySample,
-               key: chex.PRNGKey) -> Tuple[chex.Array, LossMetrics]:
+               key: chex.PRNGKey) -> tp.Tuple[chex.Array, LossMetrics]:
     """Compute the loss on a single batch of data, for one random key."""

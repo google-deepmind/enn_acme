@@ -31,14 +31,14 @@ import rlax
 
 
 @dataclasses.dataclass
-class ClippedQlearning(single_index.SingleIndexLossFn):
+class ClippedQlearning(single_index.SingleLossFnArray):
   """Clipped Q learning."""
   discount: float
   max_abs_reward: float = 1
 
   def __call__(
       self,
-      apply: networks.ApplyNoState,
+      apply: networks.ApplyArray,
       params: hk.Params,
       state: agent_base.LearnerState,
       batch: reverb.ReplaySample,
@@ -46,9 +46,12 @@ class ClippedQlearning(single_index.SingleIndexLossFn):
   ) -> Tuple[chex.Array, agent_base.LossMetrics]:
     """Evaluate loss for one batch, for one single index."""
     transitions: types.Transition = batch.data
-    net_out_tm1 = apply(params, transitions.observation, index)
+    dummy_network_state = {}
+    net_out_tm1, unused_state = apply(params, dummy_network_state,
+                                      transitions.observation, index)
     q_tm1 = networks.parse_net_output(net_out_tm1)
-    net_out_t = apply(state.target_params, transitions.next_observation, index)
+    net_out_t, unused_state = apply(state.target_params, dummy_network_state,
+                                    transitions.next_observation, index)
     q_t = networks.parse_net_output(net_out_t)
 
     d_t = (transitions.discount * self.discount).astype(jnp.float32)
@@ -61,13 +64,13 @@ class ClippedQlearning(single_index.SingleIndexLossFn):
 
 
 @dataclasses.dataclass
-class Categorical2HotQlearning(single_index.SingleIndexLossFn):
+class Categorical2HotQlearning(single_index.SingleLossFnArray):
   """Q learning applied with cross-entropy loss to two-hot targets."""
   discount: float
 
   def __call__(
       self,
-      apply: networks.ApplyNoState,
+      apply: networks.ApplyArray,
       params: hk.Params,
       state: agent_base.LearnerState,
       batch: reverb.ReplaySample,
@@ -77,11 +80,13 @@ class Categorical2HotQlearning(single_index.SingleIndexLossFn):
     transitions: types.Transition = batch.data
     batch_idx = jnp.arange(transitions.observation.shape[0])
 
-    # Parse network outputs and check the right type
-    net_out_tm1: networks.CatOutputWithPrior = apply(
-        params, transitions.observation, index)
-    net_out_t: networks.CatOutputWithPrior = apply(
-        state.target_params, transitions.next_observation, index)
+    dummy_network_state = {}
+    net_out_tm1, unused_state = apply(params, dummy_network_state,
+                                      transitions.observation, index)
+    net_out_t, unused_state = apply(state.target_params, dummy_network_state,
+                                    transitions.next_observation, index)
+
+    # Check that network output has the right type
     assert isinstance(net_out_tm1, networks.CatOutputWithPrior)
     assert isinstance(net_out_t, networks.CatOutputWithPrior)
 
