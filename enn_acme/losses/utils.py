@@ -24,19 +24,14 @@ import haiku as hk
 import reverb
 
 
-# Specific types
-_LossFn = agent_base.LossFn[agent_base.Input, agent_base.Output]
-_Enn = enn_base.EpistemicNetwork[agent_base.Input, agent_base.Output]
-
-
 def add_l2_weight_decay(
-    loss_fn: _LossFn,
+    loss_fn: agent_base.LossFn[agent_base.Input, agent_base.Output],
     scale_fn: tp.Callable[[int], float],  # Maps learner_steps --> l2 decay
     predicate: tp.Optional[enn_losses.PredicateFn] = None,
-) -> _LossFn:
+) -> agent_base.LossFn[agent_base.Input, agent_base.Output]:
   """Adds l2 weight decay to a given loss function."""
   def new_loss(
-      enn: _Enn,
+      enn: enn_base.EpistemicNetwork[agent_base.Input, agent_base.Output],
       params: hk.Params,
       state: agent_base.LearnerState,
       batch: reverb.ReplaySample,
@@ -54,16 +49,18 @@ def add_l2_weight_decay(
 
 @dataclasses.dataclass
 class CombineLossConfig(tp.Generic[agent_base.Input, agent_base.Output]):
-  loss_fn: _LossFn
+  loss_fn: agent_base.LossFn[agent_base.Input, agent_base.Output]
   name: str = 'unnamed'  # Name for the loss function
   weight: float = 1.  # Weight to scale the loss by
 
 
-def combine_losses(losses: tp.Sequence[CombineLossConfig]) -> _LossFn:
+def combine_losses(
+    losses: tp.Sequence[CombineLossConfig[agent_base.Input, agent_base.Output]],
+) -> agent_base.LossFn[agent_base.Input, agent_base.Output]:
   """Combines multiple losses into a single loss."""
 
   def loss_fn(
-      enn: _Enn,
+      enn: enn_base.EpistemicNetwork[agent_base.Input, agent_base.Output],
       params: hk.Params,
       state: agent_base.LearnerState,
       batch: reverb.ReplaySample,
@@ -80,4 +77,3 @@ def combine_losses(losses: tp.Sequence[CombineLossConfig]) -> _LossFn:
     return combined_loss, combined_metrics
 
   return loss_fn
-
