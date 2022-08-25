@@ -91,7 +91,7 @@ class SgdLearner(acme.Learner, acme.Saveable,
     # Initialize the network parameters
     dummy_index = self.enn.indexer(next(self._rng))
     dummy_input = utils.add_batch_dim(
-        jax.tree_map(lambda x: x.generate_value(), input_spec))
+        jax.tree_util.tree_map(lambda x: x.generate_value(), input_spec))
     initial_params, unused_state = self.enn.init(
         next(self._rng), dummy_input, dummy_index)
     self._state = agent_base.LearnerState(

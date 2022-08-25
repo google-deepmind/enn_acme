@@ -58,7 +58,7 @@ def average_single_index_loss(
     batched_loss = jax.vmap(single_loss, in_axes=[None, None, None, None, 0])
     loss, metrics = batched_loss(
         enn.apply, params, state, batch, batched_indexer(key))
-    return jnp.mean(loss), jax.tree_map(jnp.mean, metrics)
+    return jnp.mean(loss), jax.tree_util.tree_map(jnp.mean, metrics)
 
   return loss_fn
 
