@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ============================================================================
+# TODO(author4): Add a test for this file.
 """Run a JAX agent on a bsuite experiment."""
 
 from absl import app

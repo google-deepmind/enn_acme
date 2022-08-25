@@ -23,7 +23,7 @@ from enn.networks import base as networks_base
 import haiku as hk
 import jax
 import jax.numpy as jnp
-
+import typing_extensions as te
 
 # Helpful aliases for network definition
 _Enn = base.EpistemicNetwork[base.Input, base.Output]  # Generic ENN
@@ -33,7 +33,7 @@ Hidden = chex.Array  # Hidden state is an array
 HiddenA = chex.Array  # Hidden state including action representation
 
 
-class ActionEmbedding(tp.Protocol):
+class ActionEmbedding(te.Protocol):
 
   def __call__(self, hidden: Hidden, action: int) -> HiddenA:
     """Takes in a batch of hiddens and adds action to representation."""
