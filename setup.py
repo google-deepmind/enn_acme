@@ -53,7 +53,7 @@ setuptools.setup(
         'dm-reverb==0.7.0',
         'dm-sonnet',
         'enn @ git+https://git@github.com/deepmind/enn',
-        'jax',
+        'jax==0.3.15',
         'jaxlib',
         'neural_testbed @ git+https://git@github.com/deepmind/neural_testbed',
         'numpy',
